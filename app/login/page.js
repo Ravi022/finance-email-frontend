@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, setSession } from '@/lib/api';
 import { Msg } from '@/components/ui';
+import BrandLogo from '@/components/BrandLogo';
 
 export default function Login() {
   const router = useRouter();
@@ -27,7 +28,9 @@ export default function Login() {
   return (
     <div className="login-screen">
       <div className="login-card">
-        <span className="logo" aria-hidden="true">£</span>
+        <div className="login-brand">
+          <BrandLogo />
+        </div>
         <h1>Receivables Desk</h1>
         <p className="muted">Sign in to manage UK outstanding invoices, payments and reminder mail.</p>
         <form onSubmit={submit}>

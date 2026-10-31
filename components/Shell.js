@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, clearSession, getSession } from '@/lib/api';
 import { setCurrency } from '@/lib/format';
+import BrandLogo from '@/components/BrandLogo';
 
 export function useAuth(role) {
   const router = useRouter();
@@ -46,7 +47,7 @@ export default function Shell({ user, title, children }) {
     <>
       <header className="topbar">
         <div className="brand">
-          <span className="logo">£</span>
+          <BrandLogo size="sm" />
           <div>
             <div className="brand-title">Receivables Desk</div>
             <div className="brand-sub">{title}</div>
@@ -55,12 +56,14 @@ export default function Shell({ user, title, children }) {
         <div className="who">
           <div className="seg" role="group" aria-label="Display currency" title={`1 GBP = ${fx} INR`}>
             {['GBP', 'INR'].map((c) => (
-              <button key={c} className={cur === c ? 'on' : ''} aria-pressed={cur === c} onClick={() => pick(c)}>{c === 'GBP' ? '£ GBP' : '₹ INR'}</button>
+              <button key={c} className={cur === c ? 'on' : ''} aria-pressed={cur === c} onClick={() => pick(c)}>
+                {c === 'GBP' ? <><span className="seg-full">£ GBP</span><span className="seg-short">£</span></> : <><span className="seg-full">₹ INR</span><span className="seg-short">₹</span></>}
+              </button>
             ))}
           </div>
           <div className="user-chip">
             <span className="avatar" aria-hidden="true">{initials(user)}</span>
-            <div>
+            <div className="user-details">
               <div className="user-name">{displayName}</div>
               {!nameIsRole && user.email && <div className="user-meta">{user.email}</div>}
             </div>

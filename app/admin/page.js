@@ -10,6 +10,7 @@ import MailLogTable from '@/components/MailLogTable';
 import { Badge, Money, Msg, Stat } from '@/components/ui';
 import { gbp } from '@/lib/format';
 import { ScrollTable, usePager } from '@/components/Pagination';
+import MailTemplateEditor from '@/components/MailTemplateEditor';
 
 export default function AdminPage() {
   const user = useAuth('admin');
@@ -20,14 +21,15 @@ export default function AdminPage() {
       <div className="page-head">
         <div>
           <h1>Receivables overview</h1>
-          <p className="page-lead">Monitor outstanding balances, ageing and reminder activity. This view is read-only.</p>
+          <p className="page-lead">Monitor outstanding balances, ageing and reminder activity. Invoice data is read-only; the mail template can be edited.</p>
         </div>
       </div>
-      <Tabs value={tab} onChange={setTab} tabs={[['dashboard', 'Dashboard'], ['customers', 'Customers'], ['invoices', 'All invoices'], ['mail', 'Mail log']]} />
+      <Tabs value={tab} onChange={setTab} tabs={[['dashboard', 'Dashboard'], ['customers', 'Customers'], ['invoices', 'All invoices'], ['mail', 'Mail log'], ['template', 'Mail template']]} />
       {user && tab === 'dashboard' && <Dashboard onOpen={setOpenId} />}
       {user && tab === 'customers' && <CustomerList />}
       {user && tab === 'invoices' && <AllInvoices onOpen={(i) => setOpenId(i._id)} />}
       {user && tab === 'mail' && <Mail />}
+      {user && tab === 'template' && <MailTemplateEditor />}
       {openId && <InvoiceModal id={openId} canEdit={false} onClose={() => setOpenId(null)} />}
     </Shell>
   );

@@ -8,6 +8,7 @@ import InvoiceModal from '@/components/InvoiceModal';
 import MailLogTable from '@/components/MailLogTable';
 import { Badge, Modal, Money, Msg } from '@/components/ui';
 import { ScrollTable, usePager } from '@/components/Pagination';
+import MailTemplateEditor from '@/components/MailTemplateEditor';
 
 export default function FinancePage() {
   const user = useAuth('finance');
@@ -23,15 +24,16 @@ export default function FinancePage() {
           <h1>Invoices &amp; payments</h1>
           <p className="page-lead">Record invoices, apply receipts and keep customer reminder emails up to date.</p>
         </div>
-        <div className="row">
+        <div className="row page-actions">
           <button className="btn" onClick={() => setModal('import')}>Import Excel</button>
           <button className="btn primary" onClick={() => setModal('new')}>+ New invoice</button>
         </div>
       </div>
-      <Tabs value={tab} onChange={setTab} tabs={[['invoices', 'Invoices'], ['customers', 'Customers & emails'], ['reminders', 'Reminders']]} />
+      <Tabs value={tab} onChange={setTab} tabs={[['invoices', 'Invoices'], ['customers', 'Customers & emails'], ['reminders', 'Reminders'], ['template', 'Mail template']]} />
       {user && tab === 'invoices' && <Invoices version={version} onOpen={(i) => setModal({ id: i._id })} />}
       {user && tab === 'customers' && <Customers version={version} />}
       {user && tab === 'reminders' && <Reminders version={version} />}
+      {user && tab === 'template' && <MailTemplateEditor />}
 
       {modal === 'new' && <NewInvoice onClose={() => setModal(null)} onSaved={(inv) => { refresh(); setModal({ id: inv._id }); }} />}
       {modal === 'import' && <ImportExcel onClose={() => setModal(null)} onDone={refresh} />}
@@ -115,7 +117,7 @@ function Customers({ version }) {
                   <td className="mono">{c.code}</td><td>{c.name}</td>
                   <td>
                     <div className="row">
-                      <input style={{ width: 280 }} type="text" placeholder="accounts@customer.com" value={draft ?? c.email} onChange={(e) => setDrafts({ ...drafts, [c.code]: e.target.value })} />
+                      <input className="grow" type="text" placeholder="accounts@customer.com" value={draft ?? c.email} onChange={(e) => setDrafts({ ...drafts, [c.code]: e.target.value })} />
                       {draft !== undefined && draft !== c.email && <button className="btn primary" onClick={() => save(c, { email: draft })}>Save</button>}
                     </div>
                   </td>
