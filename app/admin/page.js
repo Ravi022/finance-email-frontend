@@ -9,13 +9,20 @@ import InvoiceModal from '@/components/InvoiceModal';
 import MailLogTable from '@/components/MailLogTable';
 import { Badge, Money, Msg, Stat } from '@/components/ui';
 import { gbp } from '@/lib/format';
+import { ScrollTable, usePager } from '@/components/Pagination';
 
 export default function AdminPage() {
   const user = useAuth('admin');
   const [tab, setTab] = useState('dashboard');
   const [openId, setOpenId] = useState(null);
   return (
-    <Shell user={user} title="Admin dashboard">
+    <Shell user={user} title="Management overview">
+      <div className="page-head">
+        <div>
+          <h1>Receivables overview</h1>
+          <p className="page-lead">Monitor outstanding balances, ageing and reminder activity. This view is read-only.</p>
+        </div>
+      </div>
       <Tabs value={tab} onChange={setTab} tabs={[['dashboard', 'Dashboard'], ['customers', 'Customers'], ['invoices', 'All invoices'], ['mail', 'Mail log']]} />
       {user && tab === 'dashboard' && <Dashboard onOpen={setOpenId} />}
       {user && tab === 'customers' && <CustomerList />}
@@ -68,7 +75,7 @@ function Dashboard({ onOpen }) {
         <div className="card">
           <h2>Falling due soon</h2>
           {d.upcoming.length === 0 ? <div className="muted">Nothing due.</div> : d.upcoming.map((u) => (
-            <div key={u._id} className="row between" style={{ padding: '5px 0', cursor: 'pointer' }} onClick={() => onOpen(u._id)}>
+            <div key={u._id} className="row between due-row" onClick={() => onOpen(u._id)}>
               <span>{u.customerName}<span className="muted small"> · {u.invoiceNo}</span></span>
               <span><Money v={u.outstanding} /> <Badge tone="blue">{u.daysToDue === 0 ? 'today' : `${u.daysToDue}d`}</Badge></span>
             </div>
@@ -95,13 +102,14 @@ function CustomerList() {
   const [err, setErr] = useState('');
   useEffect(() => { api('/customers').then(setList).catch((e) => setErr(e.message)); }, []);
   const shown = list.filter((c) => `${c.name} ${c.code}`.toLowerCase().includes(q.toLowerCase()));
+  const pager = usePager(shown);
   return (
     <>
       <Msg error={err} />
       <div className="toolbar"><input className="grow" placeholder="Search customer…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
-      <div className="table-wrap"><table>
+      <ScrollTable pager={pager} noun="customers"><table>
         <thead><tr><th>Customer</th><th>Email</th><th className="r">Invoices</th><th className="r">Outstanding</th><th className="r">Overdue</th><th className="r">Max overdue</th><th>Reminders</th></tr></thead>
-        <tbody>{shown.map((c) => (
+        <tbody>{pager.slice.map((c) => (
           <tr key={c.code}>
             <td><Link href={`/admin/customers/${c.code}`}>{c.name}</Link><div className="muted small">{c.code}</div></td>
             <td>{c.email || <Badge tone="red">No email</Badge>}</td>
@@ -109,7 +117,7 @@ function CustomerList() {
             <td className="r">{c.maxOverdueDays ? `${c.maxOverdueDays} d` : '-'}</td>
             <td>{c.reminderEnabled ? <Badge tone="green">On</Badge> : <Badge tone="gray">Off</Badge>}</td>
           </tr>))}</tbody>
-      </table></div>
+      </table></ScrollTable>
     </>
   );
 }

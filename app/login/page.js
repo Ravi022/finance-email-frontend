@@ -25,15 +25,25 @@ export default function Login() {
   }
 
   return (
-    <div className="login card">
-      <h1>Receivables Desk</h1>
-      <div className="muted">Sign in as Finance or Admin</div>
-      <form onSubmit={submit}>
-        <Msg error={err} />
-        <label>Email<input type="email" autoComplete="username" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></label>
-        <label>Password<input type="password" autoComplete="current-password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></label>
-        <button className="btn primary" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
-      </form>
+    <div className="login-screen">
+      <div className="login-card">
+        <span className="logo" aria-hidden="true">£</span>
+        <h1>Receivables Desk</h1>
+        <p className="muted">Sign in to manage UK outstanding invoices, payments and reminder mail.</p>
+        <form onSubmit={submit}>
+          <Msg error={err} />
+          <label>
+            Email
+            <input type="email" autoComplete="username" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          </label>
+          <label>
+            Password
+            <input type="password" autoComplete="current-password" required value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+          </label>
+          <button className="btn primary" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button>
+        </form>
+        <p className="login-hint">Finance records payments and customer emails. Admin has a read-only overview.</p>
+      </div>
     </div>
   );
 }

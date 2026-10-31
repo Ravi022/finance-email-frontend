@@ -16,9 +16,16 @@ export function useAuth(role) {
   return user;
 }
 
+function initials(user) {
+  const source = user?.name && user.name.trim().toLowerCase() !== user.role ? user.name : user?.email || '';
+  const parts = source.replace(/@.*/, '').split(/[\s._-]+/).filter(Boolean);
+  const letters = (parts[0]?.[0] || '') + (parts[1]?.[0] || parts[0]?.[1] || '');
+  return letters.toUpperCase() || 'U';
+}
+
 export default function Shell({ user, title, children }) {
   const router = useRouter();
-  const [cur, setCur] = useState(null); // null until the saved choice and rate are loaded
+  const [cur, setCur] = useState(null);
   const [fx, setFx] = useState(110);
   useEffect(() => {
     if (!user) return;
@@ -32,13 +39,14 @@ export default function Shell({ user, title, children }) {
     setCur(c);
   };
   if (!user) return <div className="center muted">Loading…</div>;
-  // set before children render so every amount in this pass uses the chosen currency
   setCurrency(cur || 'GBP', cur === 'INR' ? fx : 1);
+  const nameIsRole = user.name && user.name.trim().toLowerCase() === user.role;
+  const displayName = nameIsRole ? user.email : user.name;
   return (
     <>
       <header className="topbar">
         <div className="brand">
-          <span className="logo">₤</span>
+          <span className="logo">£</span>
           <div>
             <div className="brand-title">Receivables Desk</div>
             <div className="brand-sub">{title}</div>
@@ -50,8 +58,13 @@ export default function Shell({ user, title, children }) {
               <button key={c} className={cur === c ? 'on' : ''} aria-pressed={cur === c} onClick={() => pick(c)}>{c === 'GBP' ? '£ GBP' : '₹ INR'}</button>
             ))}
           </div>
-          <span className="role">{user.role}</span>
-          <span className="muted">{user.name}</span>
+          <div className="user-chip">
+            <span className="avatar" aria-hidden="true">{initials(user)}</span>
+            <div>
+              <div className="user-name">{displayName}</div>
+              {!nameIsRole && user.email && <div className="user-meta">{user.email}</div>}
+            </div>
+          </div>
           <button
             className="btn"
             onClick={() => {

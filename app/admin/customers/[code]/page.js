@@ -27,7 +27,7 @@ export default function CustomerDrilldown() {
   const c = d?.customer;
 
   return (
-    <Shell user={user} title="Admin dashboard">
+    <Shell user={user} title="Management overview">
       <Link href="/admin">← Back to dashboard</Link>
       <Msg error={err} />
       {c && (

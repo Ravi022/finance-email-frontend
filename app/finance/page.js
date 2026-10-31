@@ -7,6 +7,7 @@ import InvoiceTable from '@/components/InvoiceTable';
 import InvoiceModal from '@/components/InvoiceModal';
 import MailLogTable from '@/components/MailLogTable';
 import { Badge, Modal, Money, Msg } from '@/components/ui';
+import { ScrollTable, usePager } from '@/components/Pagination';
 
 export default function FinancePage() {
   const user = useAuth('finance');
@@ -16,9 +17,12 @@ export default function FinancePage() {
   const refresh = () => setVersion((v) => v + 1);
 
   return (
-    <Shell user={user} title="Finance workspace">
-      <div className="row between">
-        <h1>Invoices &amp; payments</h1>
+    <Shell user={user} title="Collections workspace">
+      <div className="page-head">
+        <div>
+          <h1>Invoices &amp; payments</h1>
+          <p className="page-lead">Record invoices, apply receipts and keep customer reminder emails up to date.</p>
+        </div>
         <div className="row">
           <button className="btn" onClick={() => setModal('import')}>Import Excel</button>
           <button className="btn primary" onClick={() => setModal('new')}>+ New invoice</button>
@@ -81,6 +85,7 @@ function Customers({ version }) {
 
   const load = useCallback(() => api('/customers').then(setList).catch((e) => setErr(e.message)), []);
   useEffect(() => { load(); }, [load, version]);
+  const pager = usePager(list);
 
   async function save(c, patch) {
     setErr(''); setOk('');
@@ -99,11 +104,11 @@ function Customers({ version }) {
         <div className="muted">Reminder mails go to the address below. Customers without an email are skipped.</div>
         <button className="btn" onClick={() => setAdding(true)}>+ Add customer</button>
       </div>
-      <div className="table-wrap">
+      <ScrollTable pager={pager} noun="customers">
         <table>
           <thead><tr><th>Code</th><th>Customer</th><th>Email (comma separated for several)</th><th className="r">Outstanding</th><th className="r">Overdue</th><th>Reminders</th><th>Last reminder</th></tr></thead>
           <tbody>
-            {list.map((c) => {
+            {pager.slice.map((c) => {
               const draft = drafts[c.code];
               return (
                 <tr key={c.code}>
@@ -122,7 +127,7 @@ function Customers({ version }) {
             })}
           </tbody>
         </table>
-      </div>
+      </ScrollTable>
       {adding && <AddCustomer onClose={() => setAdding(false)} onSaved={() => { setAdding(false); load(); }} />}
     </>
   );
@@ -254,20 +259,29 @@ function Reminders({ version }) {
         <span className="muted">Scheduled run: daily. Customers with all invoices paid are never mailed.</span>
       </div>
       <h3>Customers with overdue invoices</h3>
-      {!plan ? null : plan.items.length === 0 ? <div className="empty">No overdue unpaid invoices.</div> : (
-        <div className="table-wrap"><table>
-          <thead><tr><th>Customer</th><th>Email</th><th className="r">Overdue invoices</th><th className="r">Total due</th><th>Next run</th></tr></thead>
-          <tbody>{plan.items.map((i) => (
-            <tr key={i.customerCode}>
-              <td>{i.customerName}<div className="muted small">{i.customerCode}</div></td>
-              <td>{i.email || <span className="muted">-</span>}</td>
-              <td className="r">{i.invoiceCount}</td><td className="r"><Money v={i.totalDue} /></td>
-              <td>{i.willSend ? <Badge tone="green">Will send</Badge> : <Badge tone="gray">{i.skipReason}</Badge>}</td>
-            </tr>))}</tbody>
-        </table></div>
-      )}
+      <ReminderPlan items={plan?.items} />
       <h3>Mail log</h3>
       <MailLogTable logs={logs} />
+    </>
+  );
+}
+
+function ReminderPlan({ items }) {
+  const pager = usePager(items || []);
+  if (!items) return null;
+  if (!items.length) return <div className="empty">No overdue unpaid invoices.</div>;
+  return (
+    <>
+      <ScrollTable pager={pager} noun="customers"><table>
+        <thead><tr><th>Customer</th><th>Email</th><th className="r">Overdue invoices</th><th className="r">Total due</th><th>Next run</th></tr></thead>
+        <tbody>{pager.slice.map((i) => (
+          <tr key={i.customerCode}>
+            <td>{i.customerName}<div className="muted small">{i.customerCode}</div></td>
+            <td>{i.email || <span className="muted">-</span>}</td>
+            <td className="r">{i.invoiceCount}</td><td className="r"><Money v={i.totalDue} /></td>
+            <td>{i.willSend ? <Badge tone="green">Will send</Badge> : <Badge tone="gray">{i.skipReason}</Badge>}</td>
+          </tr>))}</tbody>
+      </table></ScrollTable>
     </>
   );
 }
