@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, clearSession, getSession } from '@/lib/api';
+import { convert } from '@/lib/currency';
 import { setCurrency } from '@/lib/format';
 import BrandLogo from '@/components/BrandLogo';
 
@@ -27,10 +28,23 @@ function initials(user) {
 export default function Shell({ user, title, children }) {
   const router = useRouter();
   const [cur, setCur] = useState(null);
-  const [fx, setFx] = useState(110);
+  const [rates, setRates] = useState(null);
+  const [ratesError, setRatesError] = useState(false);
+  const [ratesMeta, setRatesMeta] = useState(null);
+  const fx = rates ? convert(1, 'GBP', 'INR', rates) : null;
   useEffect(() => {
     if (!user) return;
-    api('/dashboard/fx').then((d) => setFx(d.gbpInr)).catch(() => {});
+    api('/dashboard/fx')
+      .then((d) => {
+        setRates(d.rates || null);
+        setRatesError(!d.rates);
+        setRatesMeta({ cache: d.cache, stale: d.stale, fetchedAt: d.fetchedAt || d.cachedAt });
+      })
+      .catch(() => {
+        setRates(null);
+        setRatesError(true);
+        setRatesMeta(null);
+      });
     let saved = 'GBP';
     try { saved = localStorage.getItem('fe_currency') || 'GBP'; } catch {}
     setCur(saved);
@@ -40,9 +54,11 @@ export default function Shell({ user, title, children }) {
     setCur(c);
   };
   if (!user) return <div className="center muted">Loading…</div>;
-  setCurrency(cur || 'GBP', cur === 'INR' ? fx : 1);
+  const displayCur = cur === 'INR' && rates ? 'INR' : 'GBP';
+  setCurrency(displayCur, rates);
   const nameIsRole = user.name && user.name.trim().toLowerCase() === user.role;
   const displayName = nameIsRole ? user.email : user.name;
+  const fxLabel = fx == null ? '…' : fx;
   return (
     <>
       <header className="topbar">
@@ -54,9 +70,9 @@ export default function Shell({ user, title, children }) {
           </div>
         </div>
         <div className="who">
-          <div className="seg" role="group" aria-label="Display currency" title={`1 GBP = ${fx} INR`}>
+          <div className="seg" role="group" aria-label="Display currency" title={fx == null ? 'Loading currency rates…' : `1 GBP = ₹${fx} INR`}>
             {['GBP', 'INR'].map((c) => (
-              <button key={c} className={cur === c ? 'on' : ''} aria-pressed={cur === c} onClick={() => pick(c)}>
+              <button key={c} className={cur === c ? 'on' : ''} aria-pressed={cur === c} onClick={() => pick(c)} disabled={c === 'INR' && !rates}>
                 {c === 'GBP' ? <><span className="seg-full">£ GBP</span><span className="seg-short">£</span></> : <><span className="seg-full">₹ INR</span><span className="seg-short">₹</span></>}
               </button>
             ))}
@@ -79,8 +95,23 @@ export default function Shell({ user, title, children }) {
           </button>
         </div>
       </header>
-      <main className="container" key={`${cur}-${fx}`}>
-        {cur === 'INR' && <div className="muted small" style={{ marginBottom: 8 }}>Showing INR at a fixed rate of 1 GBP = ₹{fx}. Invoices and mails stay in GBP.</div>}
+      <main className="container" key={`${cur}-${fxLabel}`}>
+        {cur === 'INR' && (
+          <div className="muted small" style={{ marginBottom: 8 }}>
+            {ratesError
+              ? 'Failed to fetch live currency rates — amounts shown in GBP.'
+              : fx == null
+                ? 'Loading currency rates…'
+                : <>
+                    Showing INR at 1 GBP = ₹{fx}. Invoices and mails stay in GBP.
+                    {ratesMeta?.stale
+                      ? ' Live rates unavailable; using saved rates.'
+                      : ratesMeta?.cache === 'hit'
+                        ? ' Using saved rates (refresh every 24h).'
+                        : null}
+                  </>}
+          </div>
+        )}
         {cur && children}
       </main>
     </>
